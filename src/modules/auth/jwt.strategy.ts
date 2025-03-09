@@ -1,13 +1,13 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { UserService } from '../users/user.service';
 import { TokenPayload } from './tokenPayload.interface';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly configService: ConfigService,
     private readonly userService: UserService,
@@ -15,24 +15,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
-          console.log('🟡 Extracting JWT from cookies:', request.cookies);
-
-          if (request?.cookies?.Authentication) {
-            return request.cookies.Authentication;
-          }
-          return null;
+          return (request?.cookies?.Authentication as string) || '';
         },
       ]),
-      secretOrKey: configService.get<string>('JWT_SECRET') || '',
+      secretOrKey: configService.get('JWT_SECRET', 'defaultsecret') || '',
     });
   }
 
   async validate(payload: TokenPayload) {
-    const user = await this.userService.getById(payload.userId);
-
-    if (!user) {
-      throw new UnauthorizedException('User not found or token invalid');
-    }
-    return user;
+    return this.userService.getById(payload.userId);
   }
 }

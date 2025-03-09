@@ -9,7 +9,6 @@ export class UserService {
   async createUser(data: CreateUserDto) {
     return this.prisma.users.create({
       data,
-
       omit: { password: true },
     });
   }

@@ -40,12 +40,9 @@ export class AuthService {
   public async getAuthenticatedUser(email: string, plainTextPassword: string) {
     try {
       const user = await this.usersService.getByEmail(email);
-      if (!user) {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-      }
       await this.verifyPassword(plainTextPassword, user.password);
-      user.password = '';
-      return user;
+      const { password, ...cleanedUser } = user;
+      return cleanedUser;
     } catch (error) {
       Logger.error(error);
       throw new HttpException(
@@ -73,14 +70,7 @@ export class AuthService {
 
   public getCookieWithJwtToken(userId: string) {
     const payload: TokenPayload = { userId };
-
-    const expiresIn = `${this.configService.get<string>('JWT_EXPIRATION_TIME')}s`;
-    console.log('🟡 JWT Expiration Time:', expiresIn);
-
-    const token = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_SECRET'),
-    });
-
+    const token = this.jwtService.sign(payload);
     return `Authentication=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get('JWT_EXPIRATION_TIME')}`;
   }
 
