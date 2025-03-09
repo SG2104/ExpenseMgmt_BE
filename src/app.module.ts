@@ -2,10 +2,11 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from './prisma/prisma.module';
-import { UserModule } from './users/user.module';
+import { PrismaModule } from './modules/prisma/prisma.module';
+import { UserModule } from './modules/users/user.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { envValidationSchema } from './config/env.validation';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -18,11 +19,12 @@ import { envValidationSchema } from './config/env.validation';
     ThrottlerModule.forRoot({
       throttlers: [
         {
-          ttl: 60,
-          limit: 10,
+          ttl: 600000,
+          limit: 100,
         },
       ],
     }),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [

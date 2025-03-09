@@ -1,12 +1,24 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger } from '@nestjs/common';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
+import * as cookieParser from 'cookie-parser';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  Logger.log(`***** Listening on port:${process.env.PORT} *****`);
+  const configService = app.get(ConfigService);
+
+  app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe());
-  await app.listen(process.env.PORT ?? 3000);
+
+  console.log(
+    '🟡 Loaded JWT_EXPIRATION_TIME:',
+    configService.get<string>('JWT_EXPIRATION_TIME'),
+  );
+
+  const port = process.env.PORT ?? 3000;
+  Logger.log(`***** Listening on port:${port} *****`);
+
+  await app.listen(port);
 }
 bootstrap();
