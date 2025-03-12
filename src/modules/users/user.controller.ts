@@ -14,6 +14,7 @@ export class UserController {
     return this.userService.createUser(body);
   }
 
+  //ensures only logged in users can fetch the list of users
   @UseGuards(JwtAuthenticationGuard)
   @Get()
   async getUsers() {

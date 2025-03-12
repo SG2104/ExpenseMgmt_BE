@@ -8,10 +8,14 @@ import { users } from '@prisma/client';
 export class LocalStrategy extends PassportStrategy(Strategy) {
   constructor(private authenticationService: AuthService) {
     super({
+      //specifies the 'email' should be used as the username
       usernameField: 'email',
     });
   }
-  async validate(email: string, password: string): Promise<users> {
+
+  //the validate method is called automatically by Passport when a user attempts to log in
+  async validate(email: string, password: string): Promise<Partial<users>> {
+    // Calls the 'getAuthenticatedUser' method in AuthService to check the credentials
     return await this.authenticationService.getAuthenticatedUser(
       email,
       password,

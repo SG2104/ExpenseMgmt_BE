@@ -20,7 +20,7 @@ import { AuthenticationController } from './auth.controller';
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),
         signOptions: {
-          expiresIn: configService.get('JWT_EXPIRATION'),
+          expiresIn: configService.get('JWT_EXPIRATION_TIME'),
         },
       }),
     }),
