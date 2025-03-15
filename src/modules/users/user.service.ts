@@ -16,11 +16,20 @@ export class UserService {
     return this.prisma.users.findMany({ omit: { password: true } });
   }
   async getByEmail(email: string) {
-    return this.prisma.users.findUnique({ where: { email } });
+    return this.prisma.users.findUnique({
+      where: { email },
+      select: { id: true, email: true, isVerified: true, password: true },
+    });
   }
 
   async getById(id: string) {
-    const user = await this.prisma.users.findUnique({ where: { id } });
+    const user = await this.prisma.users.findFirstOrThrow({ where: { id } });
+    if (!user.isVerified) {
+      throw new HttpException(
+        'Please verify your email address',
+        HttpStatus.NOT_FOUND,
+      );
+    }
     if (user) {
       return user;
     }

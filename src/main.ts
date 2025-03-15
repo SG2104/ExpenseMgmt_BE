@@ -14,7 +14,7 @@ async function bootstrap() {
     .setTitle('Expense Management API')
     .setDescription('The Expense Management API description')
     .setVersion('1.0')
-    .addCookieAuth('Authentication')
+    .addCookieAuth('jwt')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

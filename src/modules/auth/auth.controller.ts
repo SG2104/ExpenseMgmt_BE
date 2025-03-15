@@ -1,18 +1,8 @@
-import {
-  Body,
-  Req,
-  Controller,
-  HttpCode,
-  Post,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
-import { Response } from 'express';
-import { AuthService } from './auth.service';
+import { Body, Controller, Post, Response } from '@nestjs/common';
 import { CreateUserDto } from '../users/dto/create-user.dto';
-import RequestWithUser from './requestWithUser.interface';
-import { LocalAuthenticationGuard } from './localAuth.guard';
-import JwtAuthenticationGuard from './jwt-authentication.guard';
+import { AuthService } from './auth.service';
+import { Public } from 'src/common/decorators/public.decorator';
+import { Response as ExpressResponse } from 'express';
 import LoginDto from './dto/login.dto';
 
 @Controller('authentication') //base route
@@ -25,35 +15,28 @@ export class AuthenticationController {
     //injects AuthService to use the function
     return this.authenticationService.register(registrationData);
   }
+  @Public()
+  @Post('login')
+  async login(@Body() login: LoginDto, @Response() res: ExpressResponse) {
+    const { email, password } = login;
+    const token = await this.authenticationService.login(email, password);
+    const access_token = token?.access_token;
+    if (access_token) {
+      // Set JWT token as HTTP-only cookie
+      res.cookie('jwt', access_token, {
+        httpOnly: true, // Prevents JavaScript access (protection against XSS)
+        secure: process.env.NODE_ENV === 'production', // Secure only in production (HTTPS)
+        sameSite: 'strict', // CSRF protection
+        maxAge: 60 * 60 * 1000, // 1 hour expiration
+      });
 
-  //when a user logs in, the email and password are validated using LocalAuthenticationGuard
-  @HttpCode(200)
-  @UseGuards(LocalAuthenticationGuard)
-  @Post('log-in')
-  logIn(
-    @Body() LoginDto: LoginDto,
-    @Req() request: RequestWithUser,
-    @Res() response: Response,
-  ) {
-    //user is available because of the interface
-    const { user } = request; //if login is successful, holds the authenticated user
-    //jwt token is generated and sent in cookie
-    const cookie = this.authenticationService.getCookieWithJwtToken(user.id);
-
-    response.setHeader('Set-Cookie', cookie);
-
-    return response.send({ message: 'Login successful', user });
+      return res.json({ message: 'Login successful' });
+    }
   }
 
-  //user, when sends POST request, this ensures only authenticated users can log out
-  @UseGuards(JwtAuthenticationGuard)
-  @Post('log-out')
-  logOut(@Req() request: RequestWithUser, @Res() response: Response) {
-    response.setHeader(
-      'Set-Cookie',
-      //calls the 'getCookieForLogOut' method in AuthService to get a cookie that will remove authentication
-      this.authenticationService.getCookieForLogOut(),
-    );
-    return response.sendStatus(200);
+  @Post('logout')
+  logout(@Response() res: ExpressResponse) {
+    res.clearCookie('jwt');
+    return res.json({ message: 'Logout successful' });
   }
 }

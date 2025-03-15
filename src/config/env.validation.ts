@@ -8,4 +8,7 @@ export const envValidationSchema = Joi.object({
   DATABASE_URL: Joi.string().uri().required(),
   JWT_SECRET: Joi.string().required(),
   JWT_EXPIRATION_TIME: Joi.string().required(),
+  EMAIL_USER: Joi.string().email().required(),
+  EMAIL_PASS: Joi.string().required(),
+  APP_URL: Joi.string().uri().required(),
 });

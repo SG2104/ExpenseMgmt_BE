@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import JwtAuthenticationGuard from '../auth/jwt-authentication.guard';
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -14,8 +13,6 @@ export class UserController {
     return this.userService.createUser(body);
   }
 
-  //ensures only logged in users can fetch the list of users
-  @UseGuards(JwtAuthenticationGuard)
   @Get()
   async getUsers() {
     return this.userService.getUsers();

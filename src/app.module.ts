@@ -9,7 +9,10 @@ import { envValidationSchema } from './config/env.validation';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserController } from './modules/users/user.controller';
 import { UserService } from './modules/users/user.service';
-
+import { MailService } from './modules/mail/mail.service';
+import { JwtAuthGuard } from './common/enums/guards/jwt-auth.guard';
+import { JwtModule } from '@nestjs/jwt';
+import { APP_GUARD } from '@nestjs/core';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,6 +29,10 @@ import { UserService } from './modules/users/user.service';
         },
       ],
     }),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'mySecretKey',
+      signOptions: { expiresIn: '1h' },
+    }),
     AuthModule,
   ],
   controllers: [AppController, UserController],
@@ -35,6 +42,11 @@ import { UserService } from './modules/users/user.service';
     {
       provide: 'APP_GUARD',
       useClass: ThrottlerGuard,
+    },
+    MailService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard, // 👈 This makes JwtAuthGuard a global guard
     },
   ],
 })
