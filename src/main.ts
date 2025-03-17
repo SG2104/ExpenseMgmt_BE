@@ -18,7 +18,11 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: {
+      withCredentials: true,
+    },
+  });
 
   const port = process.env.PORT ?? 3000;
   Logger.log(`***** Listening on port:${port} *****`);

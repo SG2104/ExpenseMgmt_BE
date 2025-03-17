@@ -1,17 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  async createUser(data: CreateUserDto) {
-    return this.prisma.users.create({
-      data,
-      omit: { password: true },
-    });
-  }
   async getUsers() {
     return this.prisma.users.findMany({ omit: { password: true } });
   }
@@ -37,5 +30,14 @@ export class UserService {
       'User with this id does not exist',
       HttpStatus.NOT_FOUND,
     );
+  }
+  async verifyEmail(email: string) {
+    return await this.prisma.users.update({
+      where: { email },
+      data: { isVerified: true },
+      omit: {
+        password: true,
+      },
+    });
   }
 }
