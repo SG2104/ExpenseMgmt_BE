@@ -26,12 +26,14 @@ export class MailService {
   }) {
     const { email, templateName, data, subject } = payload;
     try {
+      console.log(`Sending email to: ${email}`);
       const templatePath = path.join(
         process.cwd(),
         'src',
         'templates',
         templateName + '.ejs',
       );
+      console.log(`Rendering template at: ${templatePath}`);
       const html = await ejs?.renderFile(templatePath, data);
 
       const mailOptions = {
@@ -40,7 +42,7 @@ export class MailService {
         subject: subject,
         html,
       };
-
+      console.log(`📧 Sending email with subject: ${subject}`);
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
       console.error('error', error);

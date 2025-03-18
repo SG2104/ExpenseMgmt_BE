@@ -103,15 +103,6 @@ export class AuthService {
     };
   }
 
-  // verifyToken(token: string): Promise<any> {
-  //   try {
-  //     return this.jwtService.verify(token);
-  //   } catch (error) {
-  //     Logger.error(error);
-  //     throw new UnauthorizedException('Invalid token');
-  //   }
-  // }
-
   async sendOTP(name: string, email: string) {
     // Generate a random number between 0 and 999999
     const randomNumber = Math.floor(Math.random() * 1000000);

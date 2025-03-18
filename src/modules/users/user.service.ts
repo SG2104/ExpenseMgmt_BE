@@ -40,4 +40,10 @@ export class UserService {
       },
     });
   }
+  async updatePassword(email: string, hashedPassword: string) {
+    return this.prisma.users.update({
+      where: { email },
+      data: { password: hashedPassword },
+    });
+  }
 }
