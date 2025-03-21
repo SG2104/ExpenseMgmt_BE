@@ -14,17 +14,14 @@ import { JwtAuthGuard } from './common/enums/guards/jwt-auth.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
 import { RedisModule } from './modules/redis/redis.module';
-import { PassportModule } from '@nestjs/passport';
 import { AuthenticationController } from './modules/auth/auth.controller';
 import { AuthService } from './modules/auth/auth.service';
-import { GoogleStrategy } from './modules/auth/strategies/google.strategy';
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: envValidationSchema,
     }),
-    PassportModule,
     PrismaModule,
     UserModule,
     ThrottlerModule.forRoot({
@@ -47,7 +44,6 @@ import { GoogleStrategy } from './modules/auth/strategies/google.strategy';
     UserService,
     AppService,
     AuthService,
-    GoogleStrategy,
     {
       provide: 'APP_GUARD',
       useClass: ThrottlerGuard,

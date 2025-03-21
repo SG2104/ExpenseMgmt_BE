@@ -151,11 +151,4 @@ export class AuthenticationController {
     );
     return { message: 'Password changed successfully' };
   }
-
-  @Post('google-redirect')
-  async googleAuthRedirect(@Body('token') token: string) {
-    console.log('✅ Received Google Token in Backend:', token);
-
-    return await this.authenticationService.authenticateWithGoogle(token);
-  }
 }
