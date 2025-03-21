@@ -16,22 +16,11 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { AuthenticatedRequest } from 'src/common/enums/guards/jwt-auth.guard';
 import { RequestOtpDto } from './dto/request-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { UserService } from '../users/user.service';
-import { MailService } from '../mail/mail.service';
-import { JwtService } from '@nestjs/jwt';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { Redis } from 'ioredis';
 import { ChangePasswordDto } from './dto/change-password.dto';
 @Controller('authentication') //base route
 export class AuthenticationController {
-  private redis = new Redis(); // Connect to Redis
-
-  constructor(
-    private readonly authenticationService: AuthService,
-    private readonly UserService: UserService,
-    private readonly MailService: MailService,
-    private readonly jwtService: JwtService,
-  ) {}
+  constructor(private readonly authenticationService: AuthService) {}
 
   @Public() //means it does not require authentication.
   @Post('register') //handles post request to this route
