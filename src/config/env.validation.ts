@@ -11,6 +11,9 @@ export const envValidationSchema = Joi.object({
   EMAIL_USER: Joi.string().email().required(),
   EMAIL_PASS: Joi.string().required(),
   APP_URL: Joi.string().uri().required(),
+  REDIS_HOST: Joi.string().required(),
+  REDIS_PORT: Joi.string().required(),
+  REDIS_PASSWORD: Joi.string().required(),
   GOOGLE_CLIENT_ID: Joi.string().required(),
   GOOGLE_CLIENT_SECRET: Joi.string().required(),
 });
