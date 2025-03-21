@@ -9,7 +9,7 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe());
   app.setGlobalPrefix('api/v1');
-
+  app.enableCors();
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Expense Management API')
     .setDescription('The Expense Management API description')

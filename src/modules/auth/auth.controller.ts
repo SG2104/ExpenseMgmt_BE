@@ -19,9 +19,9 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { UserService } from '../users/user.service';
 import { MailService } from '../mail/mail.service';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Redis } from 'ioredis';
+import { ChangePasswordDto } from './dto/change-password.dto';
 @Controller('authentication') //base route
 export class AuthenticationController {
   private redis = new Redis(); // Connect to Redis
@@ -125,89 +125,37 @@ export class AuthenticationController {
   @Public()
   @Post('forgot-password')
   async forgotPassword(@Body() { email }: ForgotPasswordDto) {
-    //checks if the user exists in the database
-    const user = await this.UserService.getByEmail(email);
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
-    //generates a jwt reset token with a 15-minute expiration
-    const resetToken = this.jwtService.sign(
-      { email: user.email }, //contains the email so that it remembers which user requested the password reset
-      //the token is protected by a secret password stored in .env
-      { secret: process.env.RESET_PASSWORD_SECRET, expiresIn: '15m' },
-    );
-
-    //stores the reset token in redis (expires after 15 min)
-    await this.redis.set(`${email}-reset-token`, resetToken);
-
-    //create a reset link that the user will receive in their email
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-    console.log(`Generated Reset Link: ${resetLink}`);
-
-    //send an email to the user with the reset link
-    await this.MailService.sendMail({
-      email,
-      subject: 'Password Reset Request',
-      templateName: 'password-reset',
-      data: { resetLink },
-    });
+    await this.authenticationService.forgotPassword(email);
     return { message: 'Password rest link sent to your email' };
   }
 
   @Public()
   @Post('reset-password')
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    //the user sends a post request with token (received via mail) and new password
-    const { token, newPassword } = resetPasswordDto;
+    await this.authenticationService.resetPassword(resetPasswordDto);
+    return { message: 'Password reset successful' };
+  }
 
-    console.log(`Received Token: ${token}`);
-    console.log(`New Password: ${newPassword}`);
-    try {
-      // decode the token to find who requested the reset. (decoded token will have email, iat, exp (jwt.io))
-      const payload: any = this.jwtService.verify(token, {
-        secret: process.env.RESET_PASSWORD_SECRET, // ✅ Ensures token is valid
-      });
-      if (!payload || !payload.email) {
-        throw new HttpException('Invalid token', HttpStatus.BAD_REQUEST);
-      }
-
-      //extracts the email from the decoded token
-      const email = payload.email;
-
-      //check redis to see if the token was actually issued.
-      const storedToken = await this.redis.get(`${email}-reset-token`);
-      console.log(`Token from Redis: ${storedToken}`);
-
-      // Compare received token with Redis stored token
-      if (!storedToken || storedToken !== token) {
-        throw new HttpException(
-          'Invalid or expired token',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-
-      // now it becomes sure that the user exists in database before changing their password
-      const user = await this.UserService.getByEmail(email);
-      if (!user) {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-      }
-
-      // Hash the new password
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      console.log(`Hashed Password: ${hashedPassword}`);
-
-      // Update password in DB
-      await this.UserService.updatePassword(user.email, hashedPassword);
-      console.log(`Password updated successfully for ${user.email}`);
-
-      // Delete the token from Redis (so it can’t be reused)
-      await this.redis.del(`${email}-reset-token`);
-      console.log(`Token removed from Redis after successful reset`);
-
-      return { message: 'Password reset successful' };
-    } catch (error) {
-      console.error(`Error resetting password:`, error);
-      throw new HttpException('Invalid token', HttpStatus.BAD_REQUEST);
+  @Post('change-password')
+  async changePassword(
+    @Request() req: AuthenticatedRequest,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    const userEmail = req?.user?.email;
+    if (!userEmail) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
+    await this.authenticationService.changePassword(
+      userEmail,
+      changePasswordDto,
+    );
+    return { message: 'Password changed successfully' };
+  }
+
+  @Post('google-redirect')
+  async googleAuthRedirect(@Body('token') token: string) {
+    console.log('✅ Received Google Token in Backend:', token);
+
+    return await this.authenticationService.authenticateWithGoogle(token);
   }
 }

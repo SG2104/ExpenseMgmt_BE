@@ -1,6 +1,6 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-
+import { users } from '@prisma/client';
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
@@ -16,21 +16,26 @@ export class UserService {
   }
 
   async getById(id: string) {
-    const user = await this.prisma.users.findFirstOrThrow({ where: { id } });
-    if (!user.isVerified) {
+    try {
+      const user = await this.prisma.users.findFirstOrThrow({ where: { id } });
+
+      if (!user.isVerified) {
+        throw new HttpException(
+          'Please verify your email address',
+          HttpStatus.FORBIDDEN, // Use 403 for unauthorized access
+        );
+      }
+
+      return user; // No need to check `if (user)` again
+    } catch (error) {
+      Logger.error(error);
       throw new HttpException(
-        'Please verify your email address',
+        'User with this ID does not exist',
         HttpStatus.NOT_FOUND,
       );
     }
-    if (user) {
-      return user;
-    }
-    throw new HttpException(
-      'User with this id does not exist',
-      HttpStatus.NOT_FOUND,
-    );
   }
+
   async verifyEmail(email: string) {
     return await this.prisma.users.update({
       where: { email },
@@ -45,5 +50,28 @@ export class UserService {
       where: { email },
       data: { password: hashedPassword },
     });
+  }
+  async findByEmail(email: string): Promise<users | null> {
+    return this.prisma.users.findUnique({ where: { email } }); // ✅ Use Prisma properly
+  }
+
+  async createUser(userData: {
+    googleId: string;
+    email: string;
+    first_name;
+    last_name;
+    password: '';
+  }): Promise<users> {
+    try {
+      return await this.prisma.users.create({
+        data: userData,
+      });
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException(
+        'Error creating user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
