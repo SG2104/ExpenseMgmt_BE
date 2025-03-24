@@ -9,7 +9,6 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe());
   app.setGlobalPrefix('api/v1');
-  app.enableCors();
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Expense Management API')
     .setDescription('The Expense Management API description')
@@ -17,6 +16,10 @@ async function bootstrap() {
     .addCookieAuth('jwt')
     .build();
 
+  app.enableCors({
+    origin: 'http://localhost:3000', // ✅ NOT '*'
+    credentials: true, // ✅ Allow cookies
+  });
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document, {
     swaggerOptions: {

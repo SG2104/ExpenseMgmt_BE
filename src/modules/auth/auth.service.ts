@@ -176,7 +176,7 @@ export class AuthService {
     await this.redis.set(`${email}-reset-token`, resetToken);
 
     //create a reset link that the user will receive in their email
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    const resetLink = `${this.configService.get('FRONTEND_URL')}/reset-password?token=${resetToken}`;
     console.log(`Generated Reset Link: ${resetLink}`);
 
     //send an email to the user with the reset link
@@ -267,50 +267,55 @@ export class AuthService {
 
   async authenticateWithGoogle(token: string) {
     try {
-      // ✅ Verify Google token
+      // Verify Google token via Google API
       const ticket = await this.client.verifyIdToken({
         idToken: token,
-        audience: process.env.GOOGLE_CLIENT_ID,
+        audience: this.configService.get('GOOGLE_CLIENT_ID'),
       });
 
+      // payload contains te Google user data (email, name, userId)
       const payload = ticket.getPayload();
+      console.log('Payload:', payload);
       if (!payload) {
         throw new UnauthorizedException('Invalid Google token');
       }
 
-      // ✅ Ensure email is present
+      // Ensure email is present
       const email = payload.email;
       if (!email) {
         throw new UnauthorizedException('Email is missing in Google payload');
       }
 
-      // ✅ Ensure name is present and extract first & last name
+      // Ensure name is present and extract first & last name
       const fullName = payload.name ?? 'Unknown Unknown'; // Default if name is missing
       const [first_name, ...last_nameParts] = fullName.split(' ');
       const last_name = last_nameParts.join(' ') || 'Unknown';
 
-      // ✅ Find or create user
+      console.log('No user found. Creating new user...');
       let user = await this.usersService.findByEmail(email);
+      console.log('New user created:', user);
       if (!user) {
         user = await this.usersService.createUser({
           googleId: payload.sub,
-          email: email as string, // Ensure email is always a string
+          email,
           first_name,
           last_name,
-          password: '', // Google users don't need passwords
+          password: '',
         });
       }
 
-      // ✅ Generate JWT token
+      // Generate JWT token
       const accessToken = this.jwtService.sign({
         userId: user.id,
         email: user.email,
       });
 
-      return { accessToken };
+      return {
+        access_token: accessToken,
+      };
     } catch (error: unknown) {
       if (error instanceof Error) {
-        Logger.error(`❌ Google Auth Error: ${error.message}`);
+        Logger.error(`Google Auth Error: ${error.message}`);
         throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
       }
       throw new HttpException(
