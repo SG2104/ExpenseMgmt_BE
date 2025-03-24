@@ -16,6 +16,10 @@ async function bootstrap() {
     .addCookieAuth('jwt')
     .build();
 
+  app.enableCors({
+    origin: 'http://localhost:3000', // ✅ NOT '*'
+    credentials: true, // ✅ Allow cookies
+  });
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document, {
     swaggerOptions: {

@@ -5,7 +5,9 @@ import {
   HttpStatus,
   Post,
   Request,
+  Res,
   Response,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthService } from './auth.service';
@@ -139,5 +141,33 @@ export class AuthenticationController {
       changePasswordDto,
     );
     return { message: 'Password changed successfully' };
+  }
+
+  //controller receives the token from the frontend
+  @Public()
+  @Post('google-redirect')
+  async googleAuthRedirect(
+    //token is extracted from req.body.token
+    @Body('token') token: string,
+    @Res() res: ExpressResponse, //response object to set cookies
+  ) {
+    const result =
+      //the service function validates token with Google, creates the user (if new) and returns jwt
+      await this.authenticationService.authenticateWithGoogle(token);
+
+    //if no token returned, throw error
+    if (!result?.access_token) {
+      throw new UnauthorizedException('Google authentication failed');
+    }
+
+    // Set cookie
+    res.cookie('jwt', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1000, // 1 hour
+    });
+    //return this to frontend (as a confirmation message)
+    return res.json({ message: 'Login successful' });
   }
 }
