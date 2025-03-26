@@ -61,6 +61,7 @@ export class AuthenticationController {
     throw new HttpException('something went wrong', 400);
   }
 
+  @Public()
   @Post('logout')
   logout(@Response() res: ExpressResponse) {
     res.clearCookie('jwt');

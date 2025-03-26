@@ -5,6 +5,7 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
+import { OAuth2Client } from 'google-auth-library';
 import * as bcrypt from 'bcrypt';
 import { PostgresErrorCode } from 'src/common/enums';
 import { JwtService } from '@nestjs/jwt';
@@ -20,13 +21,16 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class AuthService {
   private redis = new Redis(); // Connect to Redis
+  private client: OAuth2Client;
   constructor(
     private readonly mailService: MailService,
     private prisma: PrismaService,
     private readonly usersService: UserService,
-    private jwtService: JwtService,
+    private readonly jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+  ) {
+    this.client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  }
   //registrationData contains user input and is validated by createUserDto
   public async register(registrationData: CreateUserDto) {
     //hash the password. registrationData.password is the raw password input by the user.
